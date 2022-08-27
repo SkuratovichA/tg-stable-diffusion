@@ -66,14 +66,12 @@ async def generate_image(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     image_path = generator.generate_image()
 
     logger.info(f'image_path: {image_path}')
-    #await update.message.reply_
 
-    #1. берем текст, берем таймстемпу, записываеме текст в файл с названием таймстемпы
-    #  - querries/<timestamp>.txt
-    #  - images/<timestamps>.jpg
-    #  - sh/generator.py, и вызываем generator.py <timestamp>, который сгенерирует .sh qsub
+    if image_path is None:
+        await update.message.reply_markdown('Well, something bad happened while photo have been generated. Hence, you read this text. ((really sorry))')
+    else:
+        await update.message.reply_photo(photo=open(image_path, 'rb'), caption=text_prompt)
 
-    #2. берем image, потому что у нас есть <timestamp>, и посылаем пользователю ебать
 
 
 def main() -> None:
