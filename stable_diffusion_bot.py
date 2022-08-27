@@ -79,7 +79,8 @@ async def generate_image(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 def main() -> None:
     """Start the bot."""
     # Create the Application and pass it your bot's token.
-    application = Application.builder().token('5479486611:AAHmQ0jOtyjdjFW9fWo2hqQGzsoc_-Wd3iU').build()
+    token = '5479486611:AAHmQ0jOtyjdjFW9fWo2hqQGzsoc_-Wd3iU'
+    application = Application.builder().token(token).build()
 
     # on different commands - answer in Telegram
     application.add_handler(CommandHandler("start", start))
