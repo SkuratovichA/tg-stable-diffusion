@@ -70,7 +70,8 @@ class Imagen:
         self._generate_qsub_command()
         logger.info(f'qsub command {self.sh_file} has been created\n')
 
-        self._sumbit_qsub_command()
+        if not self._submit_qsub_command():
+            return None
 
         return self.image_file
 
@@ -104,7 +105,7 @@ class Imagen:
 
             f.write(
                 '\n\n'
-                'querry_id=$(basename ${0::-3})\n'
+                f'querry_id={self.querry_id}\n'
                 f'cd {cwd} || {{ exit 1 ; }}\n'
                 f'source /mnt/matylda3/xskura01/miniconda3/envs/activate_text.sh || {{ exit 2 ; }}\n'
                 f'python {self.python_generator_scriptname} --querry_id ${{querry_id}}\\\n'
@@ -114,18 +115,21 @@ class Imagen:
 
             logger.info('qsub command hav successefuly been generated (I\'m almost sure)\n')
 
-    def _sumbit_qsub_command(self):
+    def _submit_qsub_command(self):
         cmd = subprocess.run(
             ['qsub', self.sh_file],
         )
+        if cmd.returncode:
+            logger.info(f'qsub command returned non-zero code')
+            return False
+
+        return True
         timeout_steps = 0
-        try:
-            while not os.path.exists(self.image_file) and timeout_steps < self.timeout_step:
-                sleep(self.time_step)
-                timeout_steps += 1
-                logger.info(f'Waiting untill image is generated {self.image_file}, step: {timeout_steps}/{self.timeout_steps}')
-        except KeyboardInterrupt:
-            logger.info('Ctrl+C pressed. Exiting waiting')
+        while not os.path.exists(self.image_file) and timeout_steps < self.timeout_step:
+            sleep(self.time_step)
+            timeout_steps += 1
+            logger.info(f'Waiting untill image is generated {self.image_file}, step: {timeout_steps}/{self.timeout_step}')
+        return True
 
 
     @staticmethod
