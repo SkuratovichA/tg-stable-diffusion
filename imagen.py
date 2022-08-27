@@ -26,6 +26,7 @@ class Imagen:
         python_generator_scriptname='hf_generate.py',
         time_step=30,
         timeout_steps=20,
+        gpu_ram=24,
     ):
         if not os.path.exists(querries_dir):
             logging.info(f'{querries_dir} does not exist. Creating a new one...')
@@ -46,6 +47,7 @@ class Imagen:
         self.sh_dir = sh_dir
         self.time_step = time_step
         self.timeout_step = timeout_steps
+        self.gpu_ram = gpu_ram
 
         self.text_prompt = text_prompt
 
@@ -75,9 +77,6 @@ class Imagen:
     def _create_text_prompt_file(self):
         with open(self.text_prompt_file, 'w') as f:
             logger.info('im not sure about the correctness of this line...')
-            # FIXME:
-            # it could be wrong, because there is stuff with encoding/decoding going on.
-            # probably, there will be a need to encode/decode the string
             newline_normalized = re.sub('\n+', '\n', self.text_prompt)
             f.write(newline_normalized)
         logger.info(f'Anyways, file {self.text_prompt_file} has been created\n')
@@ -100,7 +99,7 @@ class Imagen:
                 f'#$ -o {sge_out_abs}.out\n'
                 f'#$ -e {sge_out_abs}.err\n'
                 '#$ -q long.q@*\n'
-                '#$ -l matylda3=0.01,gpu=1,gpu_ram=48G,mem_free=20G,ram_free=32G,cpu=1\n'
+                f'#$ -l matylda3=0.01,gpu=1,gpu_ram={self.gpu_ram}G,mem_free=20G,ram_free=32G,cpu=1\n'
             )
 
             f.write(
@@ -124,8 +123,7 @@ class Imagen:
             while not os.path.exists(self.image_file) and timeout_steps < self.timeout_step:
                 sleep(self.time_step)
                 timeout_steps += 1
-                logger.info(f'Waiting untill image is generated {self.image_file}')
-                pass
+                logger.info(f'Waiting untill image is generated {self.image_file}, step: {timeout_steps}/{self.timeout_steps}')
         except KeyboardInterrupt:
             logger.info('Ctrl+C pressed. Exiting waiting')
 
