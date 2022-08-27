@@ -55,7 +55,7 @@ class Imagen:
 
         self.querry_id = self._generate_id()
         self.text_prompt_file = os.path.join(querries_dir, f'{self.querry_id}.txt')
-        self.image_file = os.path.join(images_dir, f'{self.querry_id}.jpg')
+        self.image_file = os.path.join(images_dir, f'{self.querry_id}.png')
         self.sh_file =None
 
         logger.info(f'querry_id: {self.querry_id}')
@@ -123,7 +123,6 @@ class Imagen:
             logger.info(f'qsub command returned non-zero code')
             return False
 
-        return True
         timeout_steps = 0
         while not os.path.exists(self.image_file) and timeout_steps < self.timeout_step:
             sleep(self.time_step)
