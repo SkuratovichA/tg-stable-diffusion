@@ -10,7 +10,7 @@
     --------------
     ```
     --> Sasha
-- [x] Make `generate_image` return an iterator, to make possible ediding a message with the status, ex.:
+- [ ] Make `generate_image` return an iterator, to make possible ediding a message with the status, ex.:
     ```
     Generating image... Time elapsed: <number>s.
     ```
