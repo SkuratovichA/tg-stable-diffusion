@@ -26,7 +26,7 @@ class Imagen:
         python_generator_scriptname='hf_generate.py',
         time_step=30,
         timeout_steps=20,
-        gpu_ram=24,
+        gpu_ram=16,
     ):
         if not os.path.exists(querries_dir):
             logging.info(f'{querries_dir} does not exist. Creating a new one...')
