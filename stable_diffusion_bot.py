@@ -99,10 +99,17 @@ async def generate_image(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         text='Starting generating the image',
     )
 
-    timeout = generator.get_timout
+    time_elapsed = -1
     for time_elapsed in generator.generate_image():
         await context.bot.edit_message_text(
-            text=f"Generating the image...\nTime elapsed: {time_elapsed}/{timeout}s.",
+            text=f"Generating the image...\nTime elapsed: {time_elapsed}",
+            chat_id=update.message.chat_id,
+            message_id=message.message_id
+        )
+
+    if time_elapsed != -1:
+        await context.bot.edit_message_text(
+            text=f"The image is ready.\nTotal time elapsed: {time_elapsed}",
             chat_id=update.message.chat_id,
             message_id=message.message_id
         )
@@ -110,7 +117,7 @@ async def generate_image(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     image_path = generator.get_image_path
     if not image_path:
         await context.bot.edit_message_text(
-            text=f"Unable to generate the image",
+            text=f"Unable to generate the image :(",
             chat_id=update.message.chat_id,
             message_id=message.message_id
         )

@@ -41,8 +41,8 @@ class Imagen:
             sh_dir='sh',
             sge_out_dir='sge_out',
             python_generator_scriptname='hf_generate.py',
-            time_step=10,
-            timeout_steps=40,
+            time_step=5,
+            timeout=120,
             gpu_ram=16,
     ):
         if not os.path.exists(queries_dir):
@@ -66,7 +66,7 @@ class Imagen:
         self.queries_dir = queries_dir
         self.sh_dir = sh_dir
         self.time_step = time_step
-        self.timeout_step = timeout_steps
+        self.timeout = timeout
         self.gpu_ram = gpu_ram
 
         self.text_prompt = text_prompt
@@ -101,14 +101,14 @@ class Imagen:
             logger.debug(f'qsub command returned non-zero code')
             return None
 
-        timeout_steps = 0
-        while not os.path.exists(image_file) and timeout_steps < self.timeout_step:
-            timeout_steps += 1
-            logger.debug(
-                f'Waiting until image is generated {image_file}, step: {timeout_steps}/{self.timeout_step}'
-            )
+        time_elapsed = 0
+        while not os.path.exists(image_file) and time_elapsed <= self.timeout:
             sleep(self.time_step)
-            yield (timeout_steps+1) * self.time_step
+            time_elapsed += self.time_step
+            logger.debug(
+                f'Waiting until image is generated {image_file}, time elapsed: {time_elapsed}s/{self.timeout}s'
+            )
+            yield time_elapsed
         else:
             self.image_file = image_file
 
@@ -157,7 +157,7 @@ class Imagen:
 
     @property
     def get_timout(self):
-        return self.timeout_step * self.time_step
+        return self.timeout
 
 
     @staticmethod
