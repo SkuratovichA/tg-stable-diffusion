@@ -21,14 +21,10 @@ from telegram.ext import filters
 
 # Enable logging
 
+logging.basicConfig(
+    format='%(asctime)s %(levelname) %(message)', level=logging.INFO
+)
 logger = logging.getLogger(__name__)
-handler = logging.StreamHandler()
-handler.setFormatter(logging.Formatter(
-    '%(asctime)s %(levelname)s %(message)s', '%H:%M'
-))
-logger.addHandler(handler)
-logger.setLevel(logging.DEBUG)
-
 
 
 from imagen import Imagen
@@ -61,11 +57,20 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
 
 async def generate_image(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if update.message is None:
+        await update.message.reply_markdown('Ha-ha, funny enough... Hope, the next time, there will be a text provided.')
+
     text_prompt = update.message.text
     generator  = Imagen(text_prompt)
+
+    logger.info('-' * 80)
+    logger.info(f'User: {update.effective_user}')
+    logger.info(f'Text prompt: ')
+    logger.info(f'Text prompt: ')
+
+    query = update.callback_query
     image_path = generator.generate_image()
 
-    logger.info(f'image_path: {image_path}')
 
     if image_path is None:
         await update.message.reply_markdown('Well, something bad happened while photo have been generated. Hence, you read this text. ((really sorry))')
