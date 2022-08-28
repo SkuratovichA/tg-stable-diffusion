@@ -2,8 +2,6 @@
 # pylint: disable=unused-argument, wrong-import-position
 
 import logging
-import string
-import random
 from telegram import __version__ as TG_VER
 try:
     from telegram import __version_info__
@@ -34,12 +32,12 @@ from imagen import Imagen
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Send a message when the command /start is issued."""
     user = update.effective_user
-    logging.info("Strting a bot")
 
-    await update.message.reply_text(
-        f"Hi {user.mention_markdown()}\n"
-        "stable diffusion description & options ?lalala"
-         )
+    logging.info()
+    await update.message.reply_html(
+        rf"Hi {user.mention_html()}!",
+        reply_markup=ForceReply(selective=True),
+    )
 
 async def stop(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Send a message when the command /stop is issued."""
