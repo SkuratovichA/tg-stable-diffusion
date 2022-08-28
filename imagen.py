@@ -155,6 +155,10 @@ class Imagen:
     def get_image_path(self):
         return self.image_file
 
+    @property
+    def get_timout(self):
+        return self.timeout_step * self.time_step
+
 
     @staticmethod
     def _generate_id(size=12, chars=None):

@@ -99,9 +99,10 @@ async def generate_image(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         text='Starting generating the image',
     )
 
+    timeout = generator.get_timout
     for time_elapsed in generator.generate_image():
         await context.bot.edit_message_text(
-            text=f"Time elapsed: {time_elapsed}s",
+            text=f"Generating the image...\nTime elapsed: {time_elapsed}/{timeout}s.",
             chat_id=update.message.chat_id,
             message_id=message.message_id
         )
@@ -136,7 +137,6 @@ def main(token) -> None:
     logger.info('Running a bot...')
     # Run the bot until the user presses Ctrl-C
     application.run_polling()
-    application.idle()
 
 
 if __name__ == "__main__":
