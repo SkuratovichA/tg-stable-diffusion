@@ -59,7 +59,6 @@ shortuuid==1.0.8
 six @ file:///tmp/build/80754af9/six_1644875935023/work
 smmap==5.0.0
 sniffio==1.2.0
-telegram==0.0.1
 tensorboard==2.8.0
 tensorboard-data-server==0.6.1
 tensorboard-plugin-wit==1.8.1
