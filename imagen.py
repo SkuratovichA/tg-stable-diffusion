@@ -1,24 +1,37 @@
 import os
 import re
+import sys
 import string
 import random
 import logging
 import subprocess
 from time import sleep
 
-logging.basicConfig(
-    format="%(asctime)s %(name)s %(levelname)s: %(message)s", level=logging.INFO
-)
 logger = logging.getLogger(__name__)
+handler = logging.StreamHandler(stream=sys.stderr)
+handler.setFormatter(
+    logging.Formatter(
+        "%(asctime)s %(filename)s %(funcName)s() %(levelname)s: %(message)s",
+        "%d-%b-%y %H:%M",
+    )
+)
+
+logger.setLevel(logging.INFO)
+logger.addHandler(handler)
+
+
+__generating_enabled = True
 
 
 def set_generating_enabled(mode):
     assert isinstance(mode, bool), "`mode` must be a boolean"
-    Imagen.__generating_enabled = mode
+    global __generating_enabled
+    __generating_enabled = mode
+    logger.debug(f'__generating_enabled has been set to {mode}')
 
 
 class Imagen:
-    __generating_enabled = True
+    global __generating_enabled
 
     def __init__(
             self,
@@ -28,8 +41,8 @@ class Imagen:
             sh_dir='sh',
             sge_out_dir='sge_out',
             python_generator_scriptname='hf_generate.py',
-            time_step=30,
-            timeout_steps=20,
+            time_step=10,
+            timeout_steps=40,
             gpu_ram=16,
     ):
         if not os.path.exists(queries_dir):
@@ -44,6 +57,9 @@ class Imagen:
         if not os.path.exists(sge_out_dir):
             logging.info(f'{sge_out_dir} does not exist. Creating a new one...')
             os.makedirs(sge_out_dir)
+
+        # In test mode, images will not be generated
+        self.__generating_enabled = globals()['__generating_enabled']
 
         self.sge_out_dir = sge_out_dir
         self.images_dir = images_dir
@@ -62,28 +78,23 @@ class Imagen:
         self.image_file = os.path.join(images_dir, f'{self.query_id}.png')
         self.sh_file = None
 
-        logger.info(f'query_id: {self.query_id}')
-        logger.info(f'text_prompt_file: {self.text_prompt_file}')
-        logger.info(f'query_id: {self.query_id}. -- may be unused\n')
+        logger.debug(f'query_id: {self.query_id}')
+        logger.debug(f'text_prompt_file: {self.text_prompt_file}')
 
     def generate_image(self, ):
         # we need to have a file with a text, right?
         self._create_text_prompt_file()
-        logger.info(f'text prompt file {self.text_prompt_file} has been generated')
+        logger.debug(f'text prompt file {self.text_prompt_file} has been generated')
         self._generate_qsub_command()
-        logger.info(f'qsub command {self.sh_file} has been created\n')
+        logger.debug(f'qsub command {self.sh_file} has been created')
 
-        if not self._submit_qsub_command():
-            return None
-
-        return self.image_file
+        return self.image_file if self._submit_qsub_command() else None
 
     def _create_text_prompt_file(self):
         with open(self.text_prompt_file, 'w') as f:
-            logger.info('im not sure about the correctness of this line...')
             newline_normalized = re.sub('\n+', '\n', self.text_prompt)
             f.write(newline_normalized)
-        logger.info(f'Anyways, file {self.text_prompt_file} has been created\n')
+        logger.debug(f'Text prompt {self.text_prompt_file} has been created')
 
     def _generate_qsub_command(self):
         r"""
@@ -116,9 +127,10 @@ class Imagen:
                 f'                                --images_dir {self.images_dir}\n\n'
             )
 
-            logger.info('qsub command hav successefuly been generated (I\'m almost sure)\n')
+            logger.debug(f'qsub file {self.sh_file} have successfully been generated')
 
     def _submit_qsub_command(self):
+        # a test mode
         if not self.__generating_enabled:
             return False
 
@@ -126,14 +138,14 @@ class Imagen:
             ['qsub', self.sh_file],
         )
         if cmd.returncode:
-            logger.info(f'qsub command returned non-zero code')
+            logger.debug(f'qsub command returned non-zero code')
             return False
 
         timeout_steps = 0
         while not os.path.exists(self.image_file) and timeout_steps < self.timeout_step:
             sleep(self.time_step)
             timeout_steps += 1
-            logger.info(
+            logger.debug(
                 f'Waiting untill image is generated {self.image_file}, step: {timeout_steps}/{self.timeout_step}')
         return True
 
