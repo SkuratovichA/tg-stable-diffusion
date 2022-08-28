@@ -41,8 +41,8 @@ class Imagen:
             sh_dir='sh',
             sge_out_dir='sge_out',
             python_generator_scriptname='hf_generate.py',
-            time_step=5,
-            timeout=120,
+            time_step=2,
+            timeout=240,
             gpu_ram=16,
     ):
         if not os.path.exists(queries_dir):
@@ -109,7 +109,8 @@ class Imagen:
                 f'Waiting until image is generated {image_file}, time elapsed: {time_elapsed}s/{self.timeout}s'
             )
             yield time_elapsed
-        else:
+
+        if not os.path.exists(image_file):
             self.image_file = image_file
 
     def _create_text_prompt_file(self):

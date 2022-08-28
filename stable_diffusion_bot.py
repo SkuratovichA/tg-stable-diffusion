@@ -102,14 +102,14 @@ async def generate_image(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     time_elapsed = -1
     for time_elapsed in generator.generate_image():
         await context.bot.edit_message_text(
-            text=f"Generating the image...\nTime elapsed: {time_elapsed}",
+            text=f"Generating the image...\nTime elapsed: {time_elapsed}s.",
             chat_id=update.message.chat_id,
             message_id=message.message_id
         )
 
     if time_elapsed != -1:
         await context.bot.edit_message_text(
-            text=f"The image is ready.\nTotal time elapsed: {time_elapsed}",
+            text=f"The image is ready.\nTotal time elapsed: {time_elapsed}s.",
             chat_id=update.message.chat_id,
             message_id=message.message_id
         )
