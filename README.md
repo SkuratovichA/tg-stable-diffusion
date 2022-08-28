@@ -1,7 +1,7 @@
 # tg-stable-diffusion
 
 ## TODOS:
-- [x] Make log messages beatutiful, ex.:
+- [x] ~~Make log messages beatutiful, ex.:~~
     ```
     --------------
     User: <username>
@@ -10,7 +10,7 @@
     --------------
     ```
     --> Sasha
-- [ ] Make `generate_image` return an iterator, to make possible ediding a message with the status, ex.:
+- [x] ~~Make `generate_image` return an iterator, to make possible editing a message with the status, ex.:~~
     ```
     Generating image... Time elapsed: <number>s.
     ```
