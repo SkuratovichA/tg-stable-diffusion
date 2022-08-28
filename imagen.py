@@ -81,14 +81,36 @@ class Imagen:
         logger.debug(f'query_id: {self.query_id}')
         logger.debug(f'text_prompt_file: {self.text_prompt_file}')
 
-    def generate_image(self, ):
+    def generate_image(self):
+        image_file, self.image_file = self.image_file, None
+
         # we need to have a file with a text, right?
         self._create_text_prompt_file()
         logger.debug(f'text prompt file {self.text_prompt_file} has been generated')
         self._generate_qsub_command()
         logger.debug(f'qsub command {self.sh_file} has been created')
 
-        return self.image_file if self._submit_qsub_command() else None
+        # a test mode. None is returned, no iterati
+        if not self.__generating_enabled:
+            return None
+
+        cmd = subprocess.run(
+            ['qsub', self.sh_file],
+        )
+        if cmd.returncode:
+            logger.debug(f'qsub command returned non-zero code')
+            return None
+
+        timeout_steps = 0
+        while not os.path.exists(image_file) and timeout_steps < self.timeout_step:
+            timeout_steps += 1
+            logger.debug(
+                f'Waiting until image is generated {image_file}, step: {timeout_steps}/{self.timeout_step}'
+            )
+            sleep(self.time_step)
+            yield (timeout_steps+1) * self.time_step
+        else:
+            self.image_file = image_file
 
     def _create_text_prompt_file(self):
         with open(self.text_prompt_file, 'w') as f:
@@ -129,25 +151,10 @@ class Imagen:
 
             logger.debug(f'qsub file {self.sh_file} have successfully been generated')
 
-    def _submit_qsub_command(self):
-        # a test mode
-        if not self.__generating_enabled:
-            return False
+    @property
+    def get_image_path(self):
+        return self.image_file
 
-        cmd = subprocess.run(
-            ['qsub', self.sh_file],
-        )
-        if cmd.returncode:
-            logger.debug(f'qsub command returned non-zero code')
-            return False
-
-        timeout_steps = 0
-        while not os.path.exists(self.image_file) and timeout_steps < self.timeout_step:
-            sleep(self.time_step)
-            timeout_steps += 1
-            logger.debug(
-                f'Waiting untill image is generated {self.image_file}, step: {timeout_steps}/{self.timeout_step}')
-        return True
 
     @staticmethod
     def _generate_id(size=12, chars=None):
