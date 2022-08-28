@@ -35,13 +35,13 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--model-path', type=str, default='models/stable_diffusion_pipe')
 parser.add_argument('--model-id', type=str, default='CompVis/stable-diffusion-v1-4')
 
-parser.add_argument('--querry_id', type=str, default='no-id')
-parser.add_argument('--querries_dir', type=str, default='querries')
+parser.add_argument('--query_id', type=str, default='no-id')
+parser.add_argument('--queries_dir', type=str, default='queries')
 parser.add_argument('--images_dir', type=str, default='images')
 
 
-def get_prompt(prompt_dir, querry_id):
-    prompt_txt_path = os.path.join(prompt_dir, f'{querry_id}.txt')
+def get_prompt(prompt_dir, query_id):
+    prompt_txt_path = os.path.join(prompt_dir, f'{query_id}.txt')
     logger.info(f'Text prompt .txt path: {prompt_txt_path}')
     with open(prompt_txt_path) as f:
         prompt = f.read()
@@ -49,12 +49,12 @@ def get_prompt(prompt_dir, querry_id):
     return prompt
 
 
-def generate_and_save_image(prompt, images_dir, querry_id, pipe):
+def generate_and_save_image(prompt, images_dir, query_id, pipe):
     logger.info('Generating an image...')
     with autocast("cuda"):
         image = pipe(prompt, guidance_scale=7.5)["sample"][0]
 
-    image_path = f'{querry_id}.png'
+    image_path = f'{query_id}.png'
     logger.info(f'Image will be saved to: {image_path}')
     image.save(os.path.join(images_dir, image_path))
 
@@ -63,17 +63,16 @@ def main():
     args = parser.parse_args()
     logger.info(f'Provided arguments:\n{args}')
 
-
     if train_type == 'online CPU':
         pipe = StableDiffusionPipeline.from_pretrained(args.model_id, use_auth_token=True)
         pipe.save_pretrained(args.model_path)
-        logger.info(f'Pipeline saved to {path}. Exiting...')
+        logger.info(f'Pipeline saved to {args.model_path}. Exiting...')
         return
 
     pipe = StableDiffusionPipeline.from_pretrained(args.model_path, use_auth_token=False).to(device)
 
-    prompt = get_prompt(args.querries_dir, args.querry_id)
-    generate_and_save_image(prompt, args.images_dir, args.querry_id, pipe)
+    prompt = get_prompt(args.queries_dir, args.query_id)
+    generate_and_save_image(prompt, args.images_dir, args.query_id, pipe)
 
 
 if __name__ == "__main__":
