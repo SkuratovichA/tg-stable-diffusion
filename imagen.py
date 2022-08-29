@@ -110,7 +110,7 @@ class Imagen:
             )
             yield time_elapsed
 
-        if not os.path.exists(image_file):
+        if os.path.exists(image_file):
             self.image_file = image_file
 
     def _create_text_prompt_file(self):
