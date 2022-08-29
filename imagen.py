@@ -44,6 +44,12 @@ class Imagen:
             time_step=2,
             timeout=240,
             gpu_ram=16,
+            num_images=1,
+            image_width=512,
+            image_height=512,
+            make_grid=False,
+            grid_rows=0,
+            grid_columns=0
     ):
         if not os.path.exists(queries_dir):
             logging.info(f'{queries_dir} does not exist. Creating a new one...')
@@ -57,6 +63,15 @@ class Imagen:
         if not os.path.exists(sge_out_dir):
             logging.info(f'{sge_out_dir} does not exist. Creating a new one...')
             os.makedirs(sge_out_dir)
+        if any(dim_diffs := [dim % 8 for dim in [image_width, image_height]]):
+            logging.debug(f"Provided dimensions: {image_width}x{image_height}\n" \
+                          f"Both image height and image width should be multiples of 8\n" \
+                          f"New dimensions: {image_height-dim_diffs[1]}x{image_width-dim_diffs[0]}")
+            image_height, image_width = image_height-dim_diffs[1], image_width-dim_diffs[0]
+        if make_grid and 0 in [grid_columns, grid_rows]:
+            raise ValueError("make_grid parameter is set to True but grid dimensionality is not provided") 
+        if make_grid and grid_columns * grid_rows != num_images:
+            num_images = grid_columns * grid_rows
 
         # In test mode, images will not be generated
         self.__generating_enabled = globals()['__generating_enabled']
@@ -68,6 +83,11 @@ class Imagen:
         self.time_step = time_step
         self.timeout = timeout
         self.gpu_ram = gpu_ram
+        
+        self.image_dimensions = [image_height, image_width]
+        self.num_images = num_images
+        self.make_grid = make_grid
+        self.grid_dims = [grid_columns, grid_rows]
 
         self.text_prompt = text_prompt
 
@@ -124,6 +144,9 @@ class Imagen:
             generate id bash script, where $0 == id
             if it is possible to play with strings in bash, we are done
         """
+        def join_int_list(l):
+            return " ".join(map(str, l))
+
         self.sh_file = os.path.join(self.sh_dir, f'{self.query_id}.sh')
         sge_out_abs = os.path.abspath(self.sge_out_dir)
         sge_out_abs = os.path.join(sge_out_abs, self.query_id)
@@ -147,7 +170,11 @@ class Imagen:
                 f'source /mnt/matylda3/xskura01/miniconda3/envs/activate_text.sh || {{ exit 2 ; }}\n'
                 f'python {self.python_generator_scriptname} --query_id ${{query_id}}\\\n'
                 f'                                --queries_dir {self.queries_dir}\\\n'
-                f'                                --images_dir {self.images_dir}\n\n'
+                f'                                --images_dir {self.images_dir}\n'
+                f'                                --num_images {self.num_images}\n'
+                f'                                --image_dims {join_int_list(self.image_dimensions)}\n'
+                f'                                --make_grid\n' if self.make_grid else f''
+                f'                                --grid_dims {join_int_list(self.grid_dims)}\n\n' if self.make_grid else f''
             )
 
             logger.debug(f'qsub file {self.sh_file} have successfully been generated')

@@ -1,4 +1,5 @@
 import os
+from PIL import Image
 import torch
 import logging
 import argparse
@@ -32,12 +33,15 @@ except Exception as e:
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--model-path', type=str, default='models/stable_diffusion_pipe')
-parser.add_argument('--model-id', type=str, default='CompVis/stable-diffusion-v1-4')
-
-parser.add_argument('--query_id', type=str, default='no-id')
-parser.add_argument('--queries_dir', type=str, default='queries')
-parser.add_argument('--images_dir', type=str, default='images')
+parser.add_argument('--model-path', type=str, default='models/stable_diffusion_pipe', help="Path to model")
+parser.add_argument('--model-id', type=str, default='CompVis/stable-diffusion-v1-4', help="Model id")
+parser.add_argument('--query_id', type=str, default='no-id', help="Query id")
+parser.add_argument('--queries_dir', type=str, default='queries', help="Queires directory")
+parser.add_argument('--images_dir', type=str, default='images', help="Image directory")
+parser.add_argument('-n', '--num_images', type=int, default=1, help="Number of images to generate")
+parser.add_argument('-d', '--image_dims', nargs=2, default=[512, 512], help='Image dimensions')
+parser.add_argument('--make_grid', action="store_true", help='Set to make pictures join together')
+parser.add_argument('--grid_dims', nargs=2, default=[0, 0], help='Cols and rows of grid')
 
 
 def get_prompt(prompt_dir, query_id):
@@ -49,14 +53,32 @@ def get_prompt(prompt_dir, query_id):
     return prompt
 
 
-def generate_and_save_image(prompt, images_dir, query_id, pipe):
-    logger.info('Generating an image...')
-    with autocast("cuda"):
-        image = pipe(prompt, guidance_scale=7.5)["sample"][0]
+def generate_and_save_image(
+        prompt: list, 
+        images_dir: str, 
+        query_id: str,
+        image_dims: list,
+        make_grid: bool, 
+        grid_dims: list,
+        pipe: StableDiffusionPipeline):
 
-    image_path = f'{query_id}.png'
-    logger.info(f'Image will be saved to: {image_path}')
-    image.save(os.path.join(images_dir, image_path))
+    logger.info(f'Generating {"a grid image" if make_grid else "an image" if len(prompt) == 1 else "images"}...')  # we utilise a bit of bad code practices
+    with autocast("cuda"):
+        images = pipe(prompt, height=image_dims[1], width=image_dims[0], guidance_scale=7.5)["sample"]
+    # grid 
+    if make_grid is True:
+        grid_path = f'{query_id}.png'
+        width, height, rows, cols = images[0].size, grid_dims
+        grid = Image.new('RGB', size=(rows*width, cols*height))
+        for i, image in enumerate(images):
+            grid.paste(image, box=(i%cols*width, i//cols*height))
+        grid.save(os.path.join(images_dir, grid_path))
+        return
+    # no grid
+    for id, image in enumerate(images):
+        image_path = f'{query_id}_{id}.png'
+        logger.info(f'Image will be saved to: {image_path}')
+        image.save(os.path.join(images_dir, image_path))
 
 
 def main():
@@ -71,9 +93,11 @@ def main():
 
     pipe = StableDiffusionPipeline.from_pretrained(args.model_path, use_auth_token=False).to(device)
 
-    prompt = get_prompt(args.queries_dir, args.query_id)
-    generate_and_save_image(prompt, args.images_dir, args.query_id, pipe)
+    prompt = [get_prompt(args.queries_dir, args.query_id)] * args.num_images
+    generate_and_save_image(prompt, args.images_dir, args.query_id, args.image_dims, args.make_grid, args.grid_dims, pipe)  
 
 
 if __name__ == "__main__":
+    # TODO: 
+    # to parse args here, thereby making them global?
     main()
