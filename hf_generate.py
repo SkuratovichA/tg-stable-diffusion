@@ -42,6 +42,7 @@ parser.add_argument('-n', '--num_images', type=int, default=1, help="Number of i
 parser.add_argument('-d', '--image_dims', nargs=2, default=[512, 512], help='Image dimensions')
 parser.add_argument('--make_grid', action="store_true", help='Set to make pictures join together')
 parser.add_argument('--grid_dims', nargs=2, default=[0, 0], help='Cols and rows of grid')
+parser.add_argument('-s', '--num_inference_steps', type=int, default=15, help="Number of inference steps")
 
 
 def get_prompt(prompt_dir, query_id):
@@ -60,11 +61,12 @@ def generate_and_save_image(
         image_dims: list,
         make_grid: bool, 
         grid_dims: list,
+        num_inference_steps: int,
         pipe: StableDiffusionPipeline):
 
     logger.info(f'Generating {"a grid image" if make_grid else "an image" if len(prompt) == 1 else "images"}...')  # we utilise a bit of bad code practices
     with autocast("cuda"):
-        images = pipe(prompt, height=image_dims[1], width=image_dims[0], guidance_scale=7.5)["sample"]
+        images = pipe(prompt, height=image_dims[1], width=image_dims[0], guidance_scale=7.5, num_inference_steps=num_inference_steps)["sample"]
     # grid 
     if make_grid is True:
         grid_path = f'{query_id}.png'
@@ -94,7 +96,7 @@ def main():
     pipe = StableDiffusionPipeline.from_pretrained(args.model_path, use_auth_token=False).to(device)
 
     prompt = [get_prompt(args.queries_dir, args.query_id)] * args.num_images
-    generate_and_save_image(prompt, args.images_dir, args.query_id, args.image_dims, args.make_grid, args.grid_dims, pipe)  
+    generate_and_save_image(prompt, args.images_dir, args.query_id, args.image_dims, args.make_grid, args.grid_dims, args.num_inference_steps, pipe)  
 
 
 if __name__ == "__main__":

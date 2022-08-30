@@ -42,6 +42,7 @@ class Imagen:
             sge_out_dir='sge_out',
             python_generator_scriptname='hf_generate.py',
             time_step=2,
+            num_inference_steps=15,
             timeout=240,
             gpu_ram=16,
             num_images=1,
@@ -81,6 +82,7 @@ class Imagen:
         self.queries_dir = queries_dir
         self.sh_dir = sh_dir
         self.time_step = time_step
+        self.num_inference_steps = num_inference_steps
         self.timeout = timeout
         self.gpu_ram = gpu_ram
         
@@ -170,11 +172,12 @@ class Imagen:
                 f'source /mnt/matylda3/xskura01/miniconda3/envs/activate_text.sh || {{ exit 2 ; }}\n'
                 f'python {self.python_generator_scriptname} --query_id ${{query_id}}\\\n'
                 f'                                --queries_dir {self.queries_dir}\\\n'
-                f'                                --images_dir {self.images_dir}\n'
-                f'                                --num_images {self.num_images}\n'
-                f'                                --image_dims {join_int_list(self.image_dimensions)}\n'
-                f'                                --make_grid\n' if self.make_grid else f''
-                f'                                --grid_dims {join_int_list(self.grid_dims)}\n\n' if self.make_grid else f''
+                f'                                --images_dir {self.images_dir}\\\n'
+                f'                                --num_images {self.num_images}\\\n'
+                f'                                --image_dims {join_int_list(self.image_dimensions)}\\\n'
+                f'                                --make_grid\\\n' if self.make_grid else f''
+                f'                                --grid_dims {join_int_list(self.grid_dims)}\\\n' if self.make_grid else f''
+                f'                                --num_inference_steps {self.num_inference_steps}\n\n'
             )
 
             logger.debug(f'qsub file {self.sh_file} have successfully been generated')
